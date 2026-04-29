@@ -1,0 +1,106 @@
+<component name="InspectionProjectProfileManager">
+  <profile version="1.0">
+    <option name="myName" value="Project Default" />
+    <inspection_tool class="PyPackageRequirementsInspection" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="ignoredPackages">
+        <list>
+          <option value="absl-py" />
+          <option value="astunparse" />
+          <option value="cebra" />
+          <option value="certifi" />
+          <option value="charset-normalizer" />
+          <option value="colorama" />
+          <option value="contourpy" />
+          <option value="cycler" />
+          <option value="decorator" />
+          <option value="filelock" />
+          <option value="flatbuffers" />
+          <option value="fonttools" />
+          <option value="freetype-py" />
+          <option value="fsspec" />
+          <option value="gast" />
+          <option value="google-pasta" />
+          <option value="grpcio" />
+          <option value="h5py" />
+          <option value="hsluv" />
+          <option value="idna" />
+          <option value="imbalanced-learn" />
+          <option value="Jinja2" />
+          <option value="joblib" />
+          <option value="keras" />
+          <option value="kiwisolver" />
+          <option value="lazy_loader" />
+          <option value="libclang" />
+          <option value="literate-dataclasses" />
+          <option value="llvmlite" />
+          <option value="Markdown" />
+          <option value="markdown-it-py" />
+          <option value="MarkupSafe" />
+          <option value="matplotlib" />
+          <option value="mdurl" />
+          <option value="ml_dtypes" />
+          <option value="mne" />
+          <option value="mpmath" />
+          <option value="namex" />
+          <option value="networkx" />
+          <option value="numba" />
+          <option value="numpy" />
+          <option value="numpy-typing-compat" />
+          <option value="opt_einsum" />
+          <option value="optree" />
+          <option value="optype" />
+          <option value="packaging" />
+          <option value="pandas" />
+          <option value="pandas-stubs" />
+          <option value="pillow" />
+          <option value="platformdirs" />
+          <option value="pooch" />
+          <option value="protobuf" />
+          <option value="Pygments" />
+          <option value="pynndescent" />
+          <option value="pyparsing" />
+          <option value="PyQt5" />
+          <option value="PyQt5-Qt5" />
+          <option value="PyQt5_sip" />
+          <option value="python-dateutil" />
+          <option value="pytz" />
+          <option value="PyWavelets" />
+          <option value="redis" />
+          <option value="requests" />
+          <option value="rich" />
+          <option value="scikit-learn" />
+          <option value="scipy" />
+          <option value="scipy-stubs" />
+          <option value="seaborn" />
+          <option value="six" />
+          <option value="sympy" />
+          <option value="tensorboard" />
+          <option value="tensorboard-data-server" />
+          <option value="tensorflow" />
+          <option value="termcolor" />
+          <option value="threadpoolctl" />
+          <option value="torch" />
+          <option value="torchvision" />
+          <option value="tqdm" />
+          <option value="types-pytz" />
+          <option value="typing_extensions" />
+          <option value="tzdata" />
+          <option value="umap-learn" />
+          <option value="urllib3" />
+          <option value="vispy" />
+          <option value="websockets" />
+          <option value="Werkzeug" />
+          <option value="wrapt" />
+        </list>
+      </option>
+    </inspection_tool>
+    <inspection_tool class="PyPep8NamingInspection" enabled="true" level="WEAK WARNING" enabled_by_default="true">
+      <option name="ignoredErrors">
+        <list>
+          <option value="N806" />
+          <option value="N803" />
+        </list>
+      </option>
+    </inspection_tool>
+  </profile>
+</component>

@@ -1,0 +1,103 @@
+
+Training on subject 1
+Subject: 1   seed 1   time: 2.5 m   valid_acc: 0.3103   valid_loss: 1.855
+Subject: 1   seed 2   time: 2.4 m   valid_acc: 0.2241   valid_loss: 1.838
+Subject: 1   seed 3   time: 2.4 m   valid_acc: 0.2759   valid_loss: 1.843
+Subject: 1   seed 4   time: 2.4 m   valid_acc: 0.2931   valid_loss: 1.829
+Subject: 1   seed 5   time: 2.4 m   valid_acc: 0.3103   valid_loss: 1.876
+
+Training on subject 2
+Subject: 2   seed 1   time: 2.3 m   valid_acc: 0.2586   valid_loss: 1.798
+Subject: 2   seed 2   time: 2.5 m   valid_acc: 0.3793   valid_loss: 1.764
+Subject: 2   seed 3   time: 2.4 m   valid_acc: 0.2414   valid_loss: 1.780
+Subject: 2   seed 4   time: 2.4 m   valid_acc: 0.2931   valid_loss: 1.776
+Subject: 2   seed 5   time: 2.6 m   valid_acc: 0.2241   valid_loss: 1.809
+
+Training on subject 3
+Subject: 3   seed 1   time: 15.8 m   valid_acc: 0.2241   valid_loss: 1.933
+Subject: 3   seed 2   time: 5.0 m   valid_acc: 0.1897   valid_loss: 1.876
+Subject: 3   seed 3   time: 23.0 m   valid_acc: 0.2759   valid_loss: 1.886
+Subject: 3   seed 4   time: 2.4 m   valid_acc: 0.2759   valid_loss: 1.847
+Subject: 3   seed 5   time: 2.4 m   valid_acc: 0.2069   valid_loss: 1.854
+
+Training on subject 4
+Subject: 4   seed 1   time: 2.5 m   valid_acc: 0.4483   valid_loss: 1.565
+Subject: 4   seed 2   time: 2.4 m   valid_acc: 0.4138   valid_loss: 1.670
+Subject: 4   seed 3   time: 2.4 m   valid_acc: 0.3966   valid_loss: 1.709
+Subject: 4   seed 4   time: 2.4 m   valid_acc: 0.2586   valid_loss: 1.791
+Subject: 4   seed 5   time: 2.4 m   valid_acc: 0.3793   valid_loss: 1.754
+
+Training on subject 5
+Subject: 5   seed 1   time: 2.4 m   valid_acc: 0.2759   valid_loss: 1.813
+Subject: 5   seed 2   time: 2.4 m   valid_acc: 0.2241   valid_loss: 1.801
+Subject: 5   seed 3   time: 2.4 m   valid_acc: 0.2931   valid_loss: 1.799
+Subject: 5   seed 4   time: 2.4 m   valid_acc: 0.2414   valid_loss: 1.765
+Subject: 5   seed 5   time: 2.4 m   valid_acc: 0.2931   valid_loss: 1.797
+
+Training on subject 6
+Subject: 6   seed 1   time: 2.3 m   valid_acc: 0.2069   valid_loss: 2.057
+Subject: 6   seed 2   time: 2.4 m   valid_acc: 0.2414   valid_loss: 1.906
+Subject: 6   seed 3   time: 2.3 m   valid_acc: 0.2241   valid_loss: 1.975
+Subject: 6   seed 4   time: 2.3 m   valid_acc: 0.2069   valid_loss: 1.956
+Subject: 6   seed 5   time: 2.4 m   valid_acc: 0.2586   valid_loss: 1.966
+
+Training on subject 7
+Subject: 7   seed 1   time: 2.3 m   valid_acc: 0.2414   valid_loss: 1.843
+Subject: 7   seed 2   time: 2.4 m   valid_acc: 0.2931   valid_loss: 1.803
+Subject: 7   seed 3   time: 2.3 m   valid_acc: 0.2931   valid_loss: 1.815
+Subject: 7   seed 4   time: 2.3 m   valid_acc: 0.2241   valid_loss: 1.846
+Subject: 7   seed 5   time: 2.3 m   valid_acc: 0.2931   valid_loss: 1.740
+
+Training on subject 8
+Subject: 8   seed 1   time: 2.3 m   valid_acc: 0.3103   valid_loss: 1.915
+Subject: 8   seed 2   time: 2.3 m   valid_acc: 0.3448   valid_loss: 1.722
+Subject: 8   seed 3   time: 2.3 m   valid_acc: 0.2586   valid_loss: 1.869
+Subject: 8   seed 4   time: 2.3 m   valid_acc: 0.3448   valid_loss: 1.704
+Subject: 8   seed 5   time: 2.3 m   valid_acc: 0.2414   valid_loss: 1.820
+
+Training on subject 9
+Subject: 9   seed 1   time: 2.3 m   valid_acc: 0.3103   valid_loss: 1.960
+Subject: 9   seed 2   time: 2.3 m   valid_acc: 0.2759   valid_loss: 1.889
+Subject: 9   seed 3   time: 2.3 m   valid_acc: 0.2931   valid_loss: 1.859
+Subject: 9   seed 4   time: 2.3 m   valid_acc: 0.3103   valid_loss: 1.830
+Subject: 9   seed 5   time: 2.3 m   valid_acc: 0.1552   valid_loss: 2.021
+
+---------------------------------
+Validation performance (acc %):
+---------------------------------
+         sub_1   sub_2   sub_3   sub_4   sub_5   sub_6   sub_7   sub_8   sub_9     average
+         -----   -----   -----   -----   -----   -----   -----   -----   -----     -------
+Seed 1:  31.03   25.86   22.41   44.83   27.59   20.69   24.14   31.03   31.03     28.74   
+Seed 2:  22.41   37.93   18.97   41.38   22.41   24.14   29.31   34.48   27.59     28.74   
+Seed 3:  27.59   24.14   27.59   39.66   29.31   22.41   29.31   25.86   29.31     28.35   
+Seed 4:  29.31   29.31   27.59   25.86   24.14   20.69   22.41   34.48   31.03     27.20   
+Seed 5:  31.03   22.41   20.69   37.93   29.31   25.86   29.31   24.14   15.52     26.25   
+---------------------------------
+Average acc - all seeds: 27.85 %
+
+Train Time  - all seeds: 143.7 min
+---------------------------------
+
+
+---------------------------------
+Test performance (acc & k-score):
+---------------------------------
+                  sub_1   sub_2   sub_3   sub_4   sub_5   sub_6   sub_7   sub_8   sub_9     average
+                  -----   -----   -----   -----   -----   -----   -----   -----   -----     -------
+Seed 1: (acc %)   23.26   26.04   26.74   22.92   23.61   20.14   25.69   24.31   27.78     24.50   
+        (k-sco)   -0.023   0.014   0.023   -0.028   -0.019   -0.065   0.009   -0.009   0.037     -0.007   
+Seed 2: (acc %)   27.43   27.43   23.96   23.96   23.61   24.65   25.69   28.47   27.08     25.81   
+        (k-sco)   0.032   0.032   -0.014   -0.014   -0.019   -0.005   0.009   0.046   0.028     0.011   
+Seed 3: (acc %)   26.04   25.00   26.39   20.14   26.39   23.26   24.31   25.00   28.12     24.96   
+        (k-sco)   0.014   0.000   0.019   -0.065   0.019   -0.023   -0.009   0.000   0.042     -0.001   
+Seed 4: (acc %)   27.78   23.96   23.61   24.65   25.69   24.65   25.00   23.61   29.17     25.35   
+        (k-sco)   0.037   -0.014   -0.019   -0.005   0.009   -0.005   0.000   -0.019   0.056     0.005   
+Seed 5: (acc %)   27.78   25.69   28.47   26.74   25.00   27.78   25.69   23.26   27.43     26.43   
+        (k-sco)   0.037   0.009   0.046   0.023   0.000   0.037   0.009   -0.023   0.032     0.019   
+----------------------------------
+Average - all seeds (acc %): 25.41
+                    (k-sco): 0.005
+
+Inference time: 0.60 ms per trial
+----------------------------------
+
