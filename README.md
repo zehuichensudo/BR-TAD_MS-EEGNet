@@ -5,7 +5,7 @@
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![PyTorch](https://img.shields.io/badge/PyTorch-1.12+-red.svg)](https://pytorch.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-
+> 📺 **在线演示视频 (Online Demo Video):** [点击此处在 Google Drive 在线观看](https://drive.google.com/file/d/1LX1OpvJAKOcqR-WZtc9ypLCN1rSlIRgS/view?usp=drive_link))
 [English](#english-version) | [中文说明](#chinese-version)
 
 ---
