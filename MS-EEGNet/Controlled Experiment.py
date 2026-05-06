@@ -9,6 +9,7 @@ from torch.utils.data import DataLoader, TensorDataset
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.signal import butter, filtfilt
+import random
 
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 
@@ -29,16 +30,16 @@ except ImportError:
 # 【核心配置区】您可以根据需要调整训练参数
 # ============================================================================
 BATCH_SIZE = 32
-MAX_EPOCHS = 150  # 最大训练轮数（正式跑建议设为 300）
-PATIENCE = 30  # 早停耐心值：多少轮没进步就停
+MAX_EPOCHS = 150  # 最大训练轮数
+PATIENCE = 30  # 早停耐心值
 LEARNING_RATE = 5e-4
 WEIGHT_DECAY = 0.01
 
-os.makedirs('models', exist_ok=True)  # 确保有保存权重的文件夹
+os.makedirs('models', exist_ok=True)
 
 
 # ============================================================================
-#基线模型全家桶 (结构定义)
+# 基线模型全家桶 (结构定义 - 完整无删减)
 # ============================================================================
 class Conv2dWithNorm(nn.Module):
     def __init__(self, in_ch, out_ch, kernel, stride=1, padding=0, dilation=1, groups=1):
@@ -277,10 +278,8 @@ class EEGNeX_PT(nn.Module):
         return self.fc(x.view(x.size(0), -1))
 
 
-# ============================================================================
-# 数据流引擎
-# ============================================================================
-def load_and_prepare_data():
+
+def load_and_prepare_dual_data():
     print(" [1/3] 正在加载硬盘上的真实 EEG 数据...")
     data_loader = EEGDataLoader(CONFIG)
     raw_samples = data_loader.load_eeg_data()
@@ -289,7 +288,7 @@ def load_and_prepare_data():
     processed_samples = data_processor.create_epochs(processed_samples)
     full_data, full_sessions, full_labels = data_processor.getdate(processed_samples)
 
-    print("⚙ [2/3] 执行 BR-TAD 净化与滤波...")
+    print("⚙ [2/3] 执行特征空间截断与 BR-TAD 解耦净化...")
     nyq = 0.5 * 500
     b, a = butter(4, [8.0 / nyq, 35.0 / nyq], btype='band')
     br_tad_cfg = CONFIG.get('br_tad_config', {})
@@ -298,29 +297,40 @@ def load_and_prepare_data():
     center_indices = [all_ch_names.index(ch) for ch in center_channels]
     br_tad_cfg['all_channels'] = all_ch_names
 
+    # A路：Raw 数据 (10-ch)
+    X_raw_filtered = filtfilt(b, a, full_data, axis=-1).astype(np.float32)
+    X_raw_10ch = X_raw_filtered[:, center_indices, :]
+
+    # B路：Clean 数据 (10-ch)
     engine = Orthogonal_Source_BR_TAD_Engine(br_tad_cfg)
     _, X_clean, _ = engine.process_all(full_data)
-    X_filtered = filtfilt(b, a, X_clean, axis=-1).astype(np.float32)
-    X_10ch = X_filtered[:, center_indices, :]
+    X_clean_filtered = filtfilt(b, a, X_clean, axis=-1).astype(np.float32)
+    X_clean_10ch = X_clean_filtered[:, center_indices, :]
 
-    print("[3/3] 划分训练集、验证集、测试集...")
-    return prepare_dl_data(X_10ch, full_sessions, full_labels, copy.deepcopy(CONFIG["data_selection"]))
+    print("[3/3] 严格重置种子并划分双路数据集...")
+    np.random.seed(42);
+    torch.manual_seed(42);
+    random.seed(42)
+    splits_raw = prepare_dl_data(X_raw_10ch, full_sessions, full_labels, copy.deepcopy(CONFIG["data_selection"]))
+
+    np.random.seed(42);
+    torch.manual_seed(42);
+    random.seed(42)
+    splits_clean = prepare_dl_data(X_clean_10ch, full_sessions, full_labels, copy.deepcopy(CONFIG["data_selection"]))
+
+    return splits_raw, splits_clean
 
 
 # ============================================================================
-# 训练、测试、绘图引擎
+# 训练与测试引擎
 # ============================================================================
 def train_and_eval_model(model_class, name, data_splits, device):
     X_tr, X_va, X_te, y_tr, y_va, y_te = data_splits
     n_ch, n_times = X_tr.shape[1], X_tr.shape[2]
     n_cls = len(np.unique(y_tr))
 
-    print(f"\n=============================================")
-    print(f"🚀 开始集训: {name}")
-    print(f"=============================================")
-
     # 初始化模型
-    if name == "Standard EEGNet":
+    if "Standard EEGNet" in name:
         model = model_class(n_ch, n_cls, n_times, F1=8, D=2).to(device)
     else:
         model = model_class(n_ch, n_cls, n_times).to(device)
@@ -336,7 +346,6 @@ def train_and_eval_model(model_class, name, data_splits, device):
     y_va_t = torch.from_numpy(y_va).long().to(device)
     val_loader = DataLoader(TensorDataset(X_va_t, y_va_t), batch_size=BATCH_SIZE, shuffle=False)
 
-    # 优化器与损失函数
     optimizer = optim.AdamW(model.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY)
     criterion = nn.CrossEntropyLoss()
 
@@ -355,7 +364,6 @@ def train_and_eval_model(model_class, name, data_splits, device):
             torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
             optimizer.step()
 
-        # 验证
         model.eval()
         val_correct = 0
         with torch.no_grad():
@@ -373,19 +381,8 @@ def train_and_eval_model(model_class, name, data_splits, device):
         else:
             early_stop_counter += 1
 
-        if epoch % 10 == 0:
-            print(
-                f"  [Epoch {epoch:03d}] Val Acc: {val_acc * 100:.2f}% | Best: {best_acc * 100:.2f}% | EarlyStop: {early_stop_counter}/{PATIENCE}")
-
         if early_stop_counter >= PATIENCE:
-            print(f"  ⏹️ 触发早停 (Patience {PATIENCE})")
             break
-
-    # 保存权重
-    weight_name = name.replace(' ', '_').replace('(', '').replace(')', '')
-    weight_path = f"models/{weight_name}.pth"
-    if name == "MS-EEGNet (Proposed)": weight_path = "models/eegnet_best_10ch.pth"
-    torch.save(best_weights, weight_path)
 
     # ---- 测试真实准确率 ----
     model.load_state_dict(best_weights)
@@ -395,7 +392,6 @@ def train_and_eval_model(model_class, name, data_splits, device):
     with torch.no_grad():
         test_preds = model(X_te_t).argmax(dim=1)
         final_test_acc = (test_preds == y_te_t).sum().item() / len(y_te) * 100.0
-    print(f"   最终独立盲测准确率: {final_test_acc:.2f}%")
 
     # ---- 测速 ----
     dummy_input = torch.randn(1, 1, n_ch, n_times).to(device)
@@ -408,48 +404,78 @@ def train_and_eval_model(model_class, name, data_splits, device):
     if device.type == 'cuda': torch.cuda.synchronize()
 
     latency = (time.perf_counter() - start_time) * 1000 / 100
-    print(f"  ⏱️ 单次推理延迟: {latency:.2f} ms")
+
+    print(f"  [{name}] 测试集准确率: {final_test_acc:.2f}% | 推理延迟: {latency:.2f}ms")
 
     return params, final_test_acc, latency
 
 
-def plot_pure_pareto(results):
-    print("\n 正在绘制 Pareto 大图...")
+# ============================================================================
+
+# ============================================================================
+def plot_trajectory_pareto(results):
+    print("\n🎨 正在绘制架构重塑动态图 (Trajectory Pareto)...")
     plt.rcParams['font.family'] = 'sans-serif'
     plt.rcParams['font.sans-serif'] = ['Arial']
 
     fig, ax = plt.subplots(figsize=(10, 6.5), dpi=300)
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)
+    ax.grid(True, linestyle='--', alpha=0.4)
 
-    accuracies = [r["accuracy"] for r in results]
-    latencies = [r["latency"] for r in results]
-    params = [r["params"] for r in results]
-    colors = [r["color"] for r in results]
+    latencies_all = []
+    accuracies_all = []
 
-    # 调整气泡大小缩放系数，确保 28万参数的 MS-EEGNet 不会由于太大而遮挡文字
-    sizes = [np.sqrt(p) * 1.0 for p in params]
-
-    # 绘制气泡
-    ax.scatter(latencies, accuracies, s=sizes, c=colors, alpha=0.8, edgecolors='black', linewidth=1.2)
-
-    # --- 核心改进：精准标签定位 ---
     for i, r in enumerate(results):
         name = r["name"]
-        x, y = latencies[i], accuracies[i]
+        color = r["color"]
 
+        lat_r, acc_r = r["raw"]["latency"], r["raw"]["accuracy"]
+        lat_c, acc_c = r["clean"]["latency"], r["clean"]["accuracy"]
+
+        latencies_all.extend([lat_r, lat_c])
+        accuracies_all.extend([acc_r, acc_c])
+
+        size_r = np.sqrt(r["raw"]["params"]) * 1.0
+        size_c = np.sqrt(r["clean"]["params"]) * 1.0
+
+        # 1. 虚线空心圈：Baseline (未净化)
+        ax.scatter(lat_r, acc_r, s=size_r, facecolors='none', edgecolors=color,
+                   linewidth=1.8, alpha=0.6, linestyle='--')
+
+        # 2. 实心圈：Proposed (净化后)
+        ax.scatter(lat_c, acc_c, s=size_c, c=color, edgecolors='black',
+                   linewidth=1.2, alpha=0.8)
+
+        # 3. 动态箭头
+        radius_r = np.sqrt(size_r) / 2
+        radius_c = np.sqrt(size_c) / 2
+
+        arrow_style = "-|>"
+        if acc_c < acc_r:
+            # 下降：红色虚线箭头警示
+            ax.annotate("", xy=(lat_c, acc_c), xytext=(lat_r, acc_r),
+                        arrowprops=dict(arrowstyle=arrow_style, color='#EF5350', lw=2.5, alpha=0.8, linestyle='--',
+                                        shrinkA=radius_r + 3, shrinkB=radius_c + 3))
+        else:
+            # 上升：常规实线箭头
+            ax.annotate("", xy=(lat_c, acc_c), xytext=(lat_r, acc_r),
+                        arrowprops=dict(arrowstyle=arrow_style, color=color, lw=2.5, alpha=0.8,
+                                        shrinkA=radius_r + 3, shrinkB=radius_c + 3))
+
+        # 4. 标签定位
         if "Proposed" in name:
 
-            ax.scatter(x, y, s=sizes[i] * 1.5, c='none', edgecolors='red', linewidth=2, linestyle='--')
-            ax.annotate(name, (x, y),
-                        xytext=(0, 15),  # 在气泡正上方 15pt 处
+            ax.scatter(lat_c, acc_c, s=size_c * 1.5, c='none', edgecolors='red', linewidth=2, linestyle='--')
+            ax.annotate(name, (lat_c, acc_c),
+                        xytext=(0, 15),
                         textcoords='offset points',
                         ha='center', va='bottom',
                         fontsize=12, fontweight='bold', color='#D32F2F')
         else:
 
-            ax.annotate(name, (x, y),
-                        xytext=(5, -5),  # 向右下偏移 5pt
+            ax.annotate(name, (lat_c, acc_c),
+                        xytext=(5, -5),
                         textcoords='offset points',
                         ha='left', va='top',
                         fontsize=9, alpha=0.9)
@@ -457,22 +483,31 @@ def plot_pure_pareto(results):
     ax.set_xlabel('Single-Trial Inference Latency (ms)', fontsize=13, fontweight='bold')
     ax.set_ylabel('Classification Accuracy (%)', fontsize=13, fontweight='bold')
 
-    # 自动调整坐标轴范围
-    ax.set_xlim(min(latencies) * 0.5, max(latencies) * 1.1)
-    ax.set_ylim(min(accuracies) * 0.98, 100.5)
+    # 自动坐标范围缩放
+    if latencies_all and accuracies_all:
+        ax.set_xlim(min(latencies_all) * 0.5, max(latencies_all) * 1.1)
+        ax.set_ylim(min(accuracies_all) * 0.95, 100.5)
+
+    legend_elements = [
+        ax.scatter([], [], s=120, facecolors='none', edgecolors='black', linestyle='--', linewidth=1.5,
+                   label='Baseline (10-ch Unpurified)'),
+        ax.scatter([], [], s=120, c='gray', edgecolors='black', linewidth=1.2,
+                   label='Proposed (10-ch Purified by BR-TAD)')
+    ]
+    ax.legend(handles=legend_elements, loc='lower right', fontsize=11, frameon=True, shadow=True)
 
     plt.tight_layout()
-    plt.savefig("./Pareto_Frontier_Refined.png")
-    print("✅ 标签对齐版大图已保存至: ./Pareto_Frontier_Refined.png")
+    plt.savefig("./Pareto_Trajectory_Shift_Refined.png")
+    print("✅ 图 8 已保存至: ./Pareto_Trajectory_Shift_Refined.png")
     plt.show()
 
 
 if __name__ == "__main__":
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(f"⚡ 使用 {device} 进行全自动训练流水线\n")
+    print(f"⚡ 使用 {device} 启动双路全自动训练流水线\n")
 
-    # 1. 准备数据
-    data_splits = load_and_prepare_data()
+    # 1. 准备双版本数据
+    splits_raw, splits_clean = load_and_prepare_dual_data()
 
     # 2. 模型库与配色
     MODELS = {
@@ -484,26 +519,33 @@ if __name__ == "__main__":
         "EEGTCNet": EEGTCNet_PT,
         "MBEEG_SENet": MBEEG_SENet_PT,
         "EEGNeX": EEGNeX_PT,
-        "MS-EEGNet (Proposed)": MS_EEGNet
+        "MS-EEGNet": MS_EEGNet
     }
 
     COLOR_MAP = {
         "ShallowConvNet": '#90CAF9', "DeepConvNet": '#FFA726', "Standard EEGNet": '#29B6F6',
         "ATCNet": '#AB47BC', "TCNet_Fusion": '#26A69A', "EEGTCNet": '#5C6BC0',
-        "MBEEG_SENet": '#8D6E63', "EEGNeX": '#78909C', "MS-EEGNet (Proposed)": '#D32F2F'
+        "MBEEG_SENet": '#8D6E63', "EEGNeX": '#78909C', "MS-EEGNet": '#D32F2F'
     }
 
-    # 3. 遍历训练
+    # 3. 遍历双路训练
     results = []
     for name, cls in MODELS.items():
-        params, acc, lat = train_and_eval_model(cls, name, data_splits, device)
+        print(f"\n=============================================")
+        print(f"🔄 模型: {name}")
+
+        # 跑 A 路
+        params_raw, acc_raw, lat_raw = train_and_eval_model(cls, name + " (Without BR-TAD)", splits_raw, device)
+
+        # 跑 B 路
+        params_clean, acc_clean, lat_clean = train_and_eval_model(cls, name + " (With BR-TAD)", splits_clean, device)
+
         results.append({
             "name": name,
-            "latency": lat,
-            "params": params,
-            "accuracy": acc,
-            "color": COLOR_MAP[name]
+            "color": COLOR_MAP[name],
+            "raw": {"latency": lat_raw, "accuracy": acc_raw, "params": params_raw},
+            "clean": {"latency": lat_clean, "accuracy": acc_clean, "params": params_clean}
         })
 
-    # 4. 绘图
-    plot_pure_pareto(results)
+    # 4. 生成拉升/跌落图
+    plot_trajectory_pareto(results)
